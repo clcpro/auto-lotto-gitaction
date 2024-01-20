@@ -4,7 +4,7 @@ import time
 from datetime import datetime, timedelta
 from typing import List
 
-from requests import post, Response
+from requests import get, Response
 from playwright.sync_api import Playwright, sync_playwright
 
 RUN_FILE_NAME = sys.argv[0]
