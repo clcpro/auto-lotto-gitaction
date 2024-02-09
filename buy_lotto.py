@@ -74,12 +74,20 @@ def run(playwright: Playwright) -> None:
     print(page.content())
 
     # Click text=자동번호발급
-    page.click("text=자동번호발급")
+    # page.click("text=자동번호발급")
     #page.click('#num2 >> text=자동번호발급')
 
     # 구매할 개수를 선택
     # Select 1
-    page.select_option("select", str(COUNT))
+    # page.select_option("select", str(COUNT))
+
+    # Click text=확인
+    # page.click("text=확인")
+
+    # Click text=나의로또번호
+    page.click("text=나의로또번호")
+
+    page.click("input[name=\"checkNumberMy\"]")
 
     # Click text=확인
     page.click("text=확인")
