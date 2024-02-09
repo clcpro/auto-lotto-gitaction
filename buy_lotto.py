@@ -93,7 +93,7 @@ def run(playwright: Playwright) -> None:
     page.click("text=확인")
 
     # Click input:has-text("구매하기")
-    page.click("input:has-text(\"구매하기\")")
+    # page.click("input:has-text(\"구매하기\")")
 
     time.sleep(2)
     # Click text=확인 취소 >> input[type="button"]
