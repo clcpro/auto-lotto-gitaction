@@ -87,7 +87,7 @@ def run(playwright: Playwright) -> None:
     # Click text=나의로또번호
     page.click("text=나의로또번호")
 
-    page.click("input[type=\"checkbox\"]")
+    page.evalute("document.getElementsByName(\"checkNumberMy\")[0].checked=true")
 
     # Click text=확인
     page.click("text=확인")
