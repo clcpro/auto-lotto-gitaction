@@ -85,12 +85,11 @@ def run(playwright: Playwright) -> None:
     page.click("text=확인")
 
     # Click text=나의로또번호
-    page.click("text=나의로또번호")
-
-    page.evaluate("document.getElementsByName(\"checkNumberMy\").checked=true")
+    # page.click("text=나의로또번호")
+    # page.evaluate("document.getElementsByName(\"checkNumberMy\").checked=true")
 
     # Click text=확인
-    page.click("text=확인")
+    # page.click("text=확인")
 
     # Click input:has-text("구매하기")
     page.click("input:has-text(\"구매하기\")")
