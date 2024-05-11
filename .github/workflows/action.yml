@@ -1,8 +1,9 @@
 name: Lotto Buy Bot (로또 구매봇)
-# on: [push]
 on:
   schedule:
-    - cron: '20 0 * * 6' # UST 기준의 크론. UST 23:55 는 KST 08:55
+    - cron: "50 23 * * 5" # UST 기준의 크론. UST 23:50 는 KST 08:50
+  workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -15,7 +16,7 @@ jobs:
       uses: actions/setup-python@v1
       with:
         python-version: ${{ matrix.python-version }}
-    
+
     - name: Install python package
       run: |        
         pip install selenium
@@ -26,7 +27,7 @@ jobs:
         pip install --upgrade google-api-python-client oauth2client
         pip install playwright
         python -m playwright install ${{ matrix.browser-channel }} --with-deps
-    
+
     - name: Install ubuntu package
       run: |        
         sudo apt-get install fonts-unfonts-core
@@ -35,7 +36,7 @@ jobs:
         sudo apt-get install google-chrome-stable    
         wget https://chromedriver.storage.googleapis.com/100.0.4896.20/chromedriver_linux64.zip
         unzip ./chromedriver_linux64.zip           
-      
+
     - name: Run!
       env:
         USER_ID: ${{ secrets.USER_ID }}

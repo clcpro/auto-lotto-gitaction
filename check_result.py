@@ -1,11 +1,13 @@
 import re
 import sys
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import List
 
-from requests import get, Response
+import pytz
+from requests import get, Response, Session
 from playwright.sync_api import Playwright, sync_playwright
+from bs4 import BeautifulSoup
 
 RUN_FILE_NAME = sys.argv[0]
 
@@ -18,14 +20,14 @@ TELEGRAM_BOT_TOKEN = sys.argv[4]
 TELEGRAM_BOT_CHANNEL_ID = sys.argv[5]
 
 
-def __get_now() -> datetime:
-    now_utc = datetime.utcnow()
-    korea_timezone = timedelta(hours=9)
-    now_korea = now_utc + korea_timezone
-    return now_korea
+def get_now() -> datetime:
+    # 한국 시간대 객체 생성
+    korea_tz = pytz.timezone("Asia/Seoul")
+    korea_time = datetime.now(pytz.utc).astimezone(korea_tz)
+    return korea_time
 
 
-def __check_lucky_number(lucky_numbers: List[str], my_numbers: List[str]) -> str:
+def get_check_lucky_number(lucky_numbers: List[str], my_numbers: List[str]) -> str:
     return_msg = ""
     for my_num in my_numbers:
         if my_num in lucky_numbers:
@@ -34,7 +36,7 @@ def __check_lucky_number(lucky_numbers: List[str], my_numbers: List[str]) -> str
         return_msg += f" {my_num} "
     return return_msg
 
-def send_message(message: str) -> Response:
+def hook_slack(message: str) -> Response:
     korea_time_str = __get_now().strftime("%Y-%m-%d %H:%M:%S")
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     params = {
@@ -48,6 +50,11 @@ def send_message(message: str) -> Response:
 
 def run(playwright: Playwright) -> None:
     try:
+
+        # ================================================================ #
+        # 초기 세팅 및 로그인
+        # ================================================================ #
+
         browser = playwright.chromium.launch(headless=True)  # chrome 브라우저를 실행
         context = browser.new_context()
 
@@ -65,11 +72,19 @@ def run(playwright: Playwright) -> None:
             page.press('form[name="jform"] >> text=로그인', "Enter")
         time.sleep(4)
 
-        # 당첨 결과 및 번호 확인
+        # ================================================================ #
+        # 이번주 당첨 번호 파싱하기
+        # ================================================================ #
+
+        # 당첨 결과 및 번호 확인, parsing issue 때문에 3중 retry
         page.goto("https://dhlottery.co.kr/common.do?method=main")
-        result_info = page.query_selector("#article div.content").inner_text()
-        result_info = result_info.split("이전")[0].replace("\n", " ")
-        send_message(f"로또 결과: {result_info}")
+        retry_cnt = 0
+        result_info = page.query_selector("#article div.content")
+        while not result_info and retry_cnt < 3:
+            result_info = page.query_selector("#article div.content")
+            retry_cnt += 1
+        result_info = result_info.inner_text().split("이전")[0].replace("\n", " ")
+        hook_slack(f"로또 결과: {result_info}")
 
         # 번호 추출하기
         # last index가 보너스 번호
@@ -82,22 +97,41 @@ def run(playwright: Playwright) -> None:
         )
         lucky_number = lucky_number.split(",")
 
-        # 오늘 구매한 복권 결과
-        now_date = __get_now().date().strftime("%Y%m%d")
-        page.goto(
-            url=f"https://dhlottery.co.kr/myPage.do?method=lottoBuyList&searchStartDate={now_date}&searchEndDate={now_date}&lottoId=&nowPage=1"
-        )
+        # ================================================================ #
+        # 오늘 구매한 복권 번호 기반 결과 확인하기
+        # ================================================================ #
 
-        # 날짜 잘못 잡음
-        try:
-            a_tag_href = page.query_selector(
-                "tbody > tr:nth-child(1) > td:nth-child(4) > a"
-            ).get_attribute("href")
-        except AttributeError as exc:
-            raise Exception(
-                f"{exc} 에러 발생했습니다. now_date 값이 잘못세팅된 것 같습니다. 구매한 복권의 날짜와 결과 체크의 날짜가 동일한가요?"
+        cookies = page.context.cookies()
+        session = Session()
+        for cookie in cookies:
+            session.cookies.set(
+                cookie["name"], cookie["value"], domain=cookie["domain"]
             )
-
+        url = "https://dhlottery.co.kr/myPage.do"
+        querystring = {"method": "lottoBuyList"}
+        now_date = get_now().date().strftime("%Y%m%d")
+        payload = f"searchStartDate={now_date}&searchEndDate={now_date}&winGrade=2"
+        headers = {
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+            "Accept-Language": "ko,en;q=0.9,ko-KR;q=0.8,en-US;q=0.7",
+            "Cache-Control": "max-age=0",
+            "Connection": "keep-alive",
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Origin": "https://dhlottery.co.kr",
+            "Referer": "https://dhlottery.co.kr/myPage.do?method=lottoBuyListView",
+            "Sec-Fetch-Dest": "iframe",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "same-origin",
+            "Sec-Fetch-User": "?1",
+            "Upgrade-Insecure-Requests": "1",
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+            "sec-ch-ua-mobile": "?0",
+        }
+        res = session.post(url, data=payload, headers=headers, params=querystring)
+        html = BeautifulSoup(res.content, "lxml")
+        a_tag_href = html.select_one(
+            "tbody > tr:nth-child(1) > td:nth-child(4) > a"
+        ).get("href")
         detail_info = re.findall(r"\d+", a_tag_href)
         page.goto(
             url=f"https://dhlottery.co.kr/myPage.do?method=lotto645Detail&orderNo={detail_info[0]}&barcode={detail_info[1]}&issueNo={detail_info[2]}"
@@ -108,16 +142,16 @@ def run(playwright: Playwright) -> None:
             my_lucky_number = result.inner_text().split("\n")
             result_msg += (
                 my_lucky_number[0]
-                + __check_lucky_number(lucky_number, my_lucky_number[1:])
+                + get_check_lucky_number(lucky_number, my_lucky_number[1:])
                 + "\n"
             )
-        send_message(f"> 이번주 나의 행운의 번호 결과는?!?!?!\n{result_msg}")
+        hook_slack(f"> 이번주 나의 행운의 번호 결과는?!?!?!\n{result_msg}")
 
         # End of Selenium
         context.close()
         browser.close()
     except Exception as exc:
-        send_message(exc)
+        hook_slack(exc)
         context.close()
         browser.close()
         raise exc
