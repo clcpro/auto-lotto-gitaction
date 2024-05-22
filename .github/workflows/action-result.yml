@@ -27,6 +27,9 @@ jobs:
           pip install twython
           pip install pillow
           pip install gspread
+          pip install beautifulsoup4
+          pip install lxml
+          pip install pytz
           pip install --upgrade google-api-python-client oauth2client
           pip install playwright
           python -m playwright install ${{ matrix.browser-channel }} --with-deps
@@ -48,4 +51,4 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{secrets.TELEGRAM_BOT_TOKEN}}
           TELEGRAM_BOT_CHANNEL_ID: ${{secrets.TELEGRAM_BOT_CHANNEL_ID}}
         run: |
-          python ./check_result.py $USER_ID $USER_PW $BUY_COUNT $TELEGRAM_BOT_TOKEN $TELEGRAM_BOT_CHANNEL_ID
+          python ./check_result.py $USER_ID $USER_PW $TELEGRAM_BOT_TOKEN $TELEGRAM_BOT_CHANNEL_ID $BUY_COUNT

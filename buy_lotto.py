@@ -12,12 +12,12 @@ from bs4 import BeautifulSoup
 USER_ID = sys.argv[1]
 USER_PW = sys.argv[2]
 
-# 구매 개수를 설정
-COUNT = sys.argv[3]
-
 # 텔레그램 봇 토큰을 설정
-TELEGRAM_BOT_TOKEN = sys.argv[4]
-TELEGRAM_BOT_CHANNEL_ID = sys.argv[5]
+TELEGRAM_BOT_TOKEN = sys.argv[3]
+TELEGRAM_BOT_CHANNEL_ID = sys.argv[4]
+
+# 구매 개수를 설정
+COUNT = sys.argv[5]
 
 class BalanceError(Exception):
     def __init__(self, message="An error occurred", code=None):
@@ -56,26 +56,13 @@ def run(playwright: Playwright) -> None:
         browser = playwright.chromium.launch(headless=True)  # chrome 브라우저를 실행
         context = browser.new_context()
 
-    # Open new page
-    page = context.new_page()
-
-    # Go to https://dhlottery.co.kr/user.do?method=login
-    page.goto("https://dhlottery.co.kr/user.do?method=login")
-
-    # Click [placeholder="아이디"]
-    page.click("[placeholder=\"아이디\"]")
-
-    # Fill [placeholder="아이디"]
-    page.fill("[placeholder=\"아이디\"]", USER_ID)
-
-    # Press Tab
-    page.press("[placeholder=\"아이디\"]", "Tab")
-
-    # Fill [placeholder="비밀번호"]
-    page.fill("[placeholder=\"비밀번호\"]", USER_PW)
-
-    # Press Tab
-    page.press("[placeholder=\"비밀번호\"]", "Tab")
+        page = context.new_page()
+        page.goto("https://dhlottery.co.kr/user.do?method=login")
+        page.click('[placeholder="아이디"]')
+        page.fill('[placeholder="아이디"]', USER_ID)
+        page.press('[placeholder="아이디"]', "Tab")
+        page.fill('[placeholder="비밀번호"]', USER_PW)
+        page.press('[placeholder="비밀번호"]', "Tab")
 
         # Press Enter
         # with page.expect_navigation(url="https://ol.dhlottery.co.kr/olotto/game/game645.do"):
@@ -104,30 +91,16 @@ def run(playwright: Playwright) -> None:
         page.locator("#popupLayerAlert").get_by_role("button", name="확인").click()
         page.click("text=자동번호발급")
 
-    # 구매할 개수를 선택
-    # Select 1
-    page.select_option("select", str(COUNT))
-
-    # Click text=확인
-    page.click("text=확인")
-
-    # Click text=나의로또번호
-    # page.click("text=나의로또번호")
-    # page.evaluate("document.getElementsByName(\"checkNumberMy\").checked=true")
-
-    # Click text=확인
-    # page.click("text=확인")
-
-    # Click input:has-text("구매하기")
-    page.click("input:has-text(\"구매하기\")")
-
-    time.sleep(2)
-    # Click text=확인 취소 >> input[type="button"]
-    page.click("text=확인 취소 >> input[type=\"button\"]")
-
-    # Click input[name="closeLayer"]
-    page.click("input[name=\"closeLayer\"]")
-    # assert page.url == "https://el.dhlottery.co.kr/game/TotalGame.jsp?LottoId=LO40"
+        # 구매할 개수를 선택
+        page.select_option("select", str(COUNT))  # Select 1
+        page.click("text=확인")
+        page.click('input:has-text("구매하기")')  # Click input:has-text("구매하기")
+        time.sleep(2)
+        page.click(
+            'text=확인 취소 >> input[type="button"]'
+        )  # Click text=확인 취소 >> input[type="button"]
+        page.click('input[name="closeLayer"]')
+        # assert page.url == "https://el.dhlottery.co.kr/game/TotalGame.jsp?LottoId=LO40"
 
         hook_slack(
             f"{COUNT}개 복권 구매 성공! \n자세하게 확인하기: https://dhlottery.co.kr/myPage.do?method=notScratchListView"

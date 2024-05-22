@@ -16,8 +16,8 @@ USER_ID = sys.argv[1]
 USER_PW = sys.argv[2]
 
 # 텔레그램 봇 토큰을 설정
-TELEGRAM_BOT_TOKEN = sys.argv[4]
-TELEGRAM_BOT_CHANNEL_ID = sys.argv[5]
+TELEGRAM_BOT_TOKEN = sys.argv[3]
+TELEGRAM_BOT_CHANNEL_ID = sys.argv[4]
 
 
 def get_now() -> datetime:

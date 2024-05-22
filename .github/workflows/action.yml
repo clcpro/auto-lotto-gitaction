@@ -20,10 +20,13 @@ jobs:
     - name: Install python package
       run: |        
         pip install selenium
-        pip install requests        
+        pip install requests
         pip install twython
-        pip install pillow    
-        pip install gspread        
+        pip install pillow
+        pip install gspread
+        pip install beautifulsoup4
+        pip install lxml
+        pip install pytz
         pip install --upgrade google-api-python-client oauth2client
         pip install playwright
         python -m playwright install ${{ matrix.browser-channel }} --with-deps
@@ -45,4 +48,4 @@ jobs:
         TELEGRAM_BOT_TOKEN: ${{secrets.TELEGRAM_BOT_TOKEN}}
         TELEGRAM_BOT_CHANNEL_ID: ${{secrets.TELEGRAM_BOT_CHANNEL_ID}}
       run: |
-        python ./buy_lotto.py $USER_ID $USER_PW $BUY_COUNT $TELEGRAM_BOT_TOKEN $TELEGRAM_BOT_CHANNEL_ID
+        python ./buy_lotto.py $USER_ID $USER_PW $TELEGRAM_BOT_TOKEN $TELEGRAM_BOT_CHANNEL_ID $BUY_COUNT
