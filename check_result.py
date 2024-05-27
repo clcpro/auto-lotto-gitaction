@@ -37,11 +37,10 @@ def get_check_lucky_number(lucky_numbers: List[str], my_numbers: List[str]) -> s
     return return_msg
 
 def hook_slack(message: str) -> Response:
-    korea_time_str = __get_now().strftime("%Y-%m-%d %H:%M:%S")
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     params = {
         "chat_id": TELEGRAM_BOT_CHANNEL_ID,
-        "text": f"> {korea_time_str} *로또 자동 구매 봇 알림* \n {message}",
+        "text": f"> *로또 자동 구매 봇 알림* \n {message}",
     }
     headers = { "Content-Type": "application/json" }
     res = get(url, params=params, headers=headers)
