@@ -37,11 +37,10 @@ def get_now() -> datetime:
 
 def hook_slack(message: str) -> Response:
     # 실제로는 텔레그램으로 전송
-    korea_time_str = get_now().strftime("%Y-%m-%d %H:%M:%S")
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     params = {
         "chat_id": TELEGRAM_BOT_CHANNEL_ID,
-        "text": f"> {korea_time_str} *로또 자동 구매 봇 알림* \n{message}",
+        "text": f"> *로또 자동 구매 봇 알림* \n{message}",
     }
     headers = { "Content-Type": "application/json" }
     res = get(url, params=params, headers=headers)
